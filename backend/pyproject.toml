@@ -1,0 +1,6 @@
+[project]
+name = "trade-coach-backend"
+version = "0.1.0"
+description = "Backend API and coaching engine for Trade Coach"
+requires-python = ">=3.13,<3.14"
+dependencies = []
