@@ -24,9 +24,17 @@ class PositionOpened:
     equity: Decimal
     risk_amount: Decimal | None
 
+    def __post_init__(self) -> None:
+        if self.equity <= Decimal("0"):
+            raise ValueError("equity must be greater than zero")
+
+        if self.volume <= Decimal("0"):
+            raise ValueError("volume must be greater than zero")
+
+
     @property
     def risk_percentage(self) -> Decimal | None:
-        if self.risk_amount == None:
+        if self.risk_amount is None:
             return None
         else:
             return (self.risk_amount / self.equity) * Decimal("100")
