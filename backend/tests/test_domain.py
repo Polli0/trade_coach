@@ -93,7 +93,7 @@ class TradingPlanTests(unittest.TestCase):
         result = plan.evaluate_risk(position)
         self.assertEqual(result, RiskEvaluation.EXCEEDED)
 
-    def test_returns_none_when_position_risk_is_unknown(self) -> None:
+    def test_returns_unknown_when_position_risk_is_unknown(self) -> None:
         position = make_position_opened(
             stop_loss=None,
             risk_amount=None,
@@ -107,7 +107,7 @@ class TradingPlanTests(unittest.TestCase):
         result = plan.evaluate_risk(position)
         self.assertEqual(result, RiskEvaluation.UNKNOWN)
 
-    def test_returns_false_when_position_risk_equals_limit(self) -> None:
+    def test_returns_within_limit_when_position_risk_equals_limit(self) -> None:
         position = make_position_opened(
             risk_amount=Decimal("100"),
         )
@@ -120,7 +120,7 @@ class TradingPlanTests(unittest.TestCase):
         result = plan.evaluate_risk(position)
         self.assertEqual(result, RiskEvaluation.WITHIN_LIMIT)
 
-    def test_returns_false_when_position_risk_is_below_limit(self) -> None:
+    def test_returns_within_limit_when_position_risk_is_below_limit(self) -> None:
         position = make_position_opened(
             risk_amount=Decimal("50"),
         )

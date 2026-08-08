@@ -13,6 +13,10 @@ class RiskEvaluation(StrEnum):
     WITHIN_LIMIT = "within_limit"
     UNKNOWN = "unknown"
 
+class CoachMessageKind(StrEnum):
+    RISK_LIMIT_EXCEEDED = "risk_limit_exceeded"
+    RISK_UNKNOWN = "risk_unknown"
+
 
 @dataclass(frozen=True, slots=True)
 class PositionOpened:
@@ -63,3 +67,14 @@ class TradingPlan:
             if risk_percentage > self.max_risk_percentage:
                 return RiskEvaluation.EXCEEDED
             return RiskEvaluation.WITHIN_LIMIT
+
+@dataclass(frozen=True, slots=True)
+class CoachMessage:
+    account_id: str
+    position_id: str | None
+    occurred_at: datetime
+    kind: CoachMessageKind
+    title: str
+    body: str
+
+    
