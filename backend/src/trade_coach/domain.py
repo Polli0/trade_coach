@@ -49,8 +49,9 @@ class TradingPlan:
             raise ValueError("max risk percentage must be greater than zero")
 
     def is_risk_exceeded_by(self, position: PositionOpened) -> bool | None:
-        if self.account_id == position.account_id:
-            risk_percentage = position.risk_percentage
-            if risk_percentage is None:
-                return None
-            return risk_percentage > self.max_risk_percentage
+        if self.account_id != position.account_id:
+            raise ValueError("position and trading plan must belong to the same account")
+        risk_percentage = position.risk_percentage
+        if risk_percentage is None:
+            return None
+        return risk_percentage > self.max_risk_percentage

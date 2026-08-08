@@ -134,5 +134,18 @@ class TradingPlanTests(unittest.TestCase):
         result = plan.is_risk_exceeded_by(position)
         self.assertFalse(result)
 
+    def test_account_not_recognized(self) -> None:
+        position = make_position_opened()
 
+        plan = TradingPlan(
+            account_id = "account-2",
+            max_risk_percentage = Decimal("2"),
+        )
 
+        with self.assertRaisesRegex(
+            ValueError,
+            "position and trading plan must belong to the same account",
+        ):
+
+            plan.is_risk_exceeded_by(position)
+            
