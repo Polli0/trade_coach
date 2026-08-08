@@ -2,8 +2,7 @@ import unittest
 from datetime import UTC, datetime
 from decimal import Decimal
 
-from trade_coach.domain import PositionOpened, TradeSide, TradingPlan
-
+from trade_coach.domain import PositionOpened, TradeSide, TradingPlan, RiskEvaluation
 
 def make_position_opened(
     *,
@@ -91,8 +90,8 @@ class TradingPlanTests(unittest.TestCase):
             max_risk_percentage = Decimal("1")
         )
 
-        result = plan.is_risk_exceeded_by(position)
-        self.assertTrue(result)
+        result = plan.evaluate_risk(position)
+        self.assertEqual(result, RiskEvaluation.EXCEEDED)
 
     def test_returns_none_when_position_risk_is_unknown(self) -> None:
         position = make_position_opened(
@@ -105,8 +104,8 @@ class TradingPlanTests(unittest.TestCase):
             max_risk_percentage = Decimal("1"),
         )
 
-        result = plan.is_risk_exceeded_by(position)
-        self.assertIsNone(result)
+        result = plan.evaluate_risk(position)
+        self.assertEqual(result, RiskEvaluation.UNKNOWN)
 
     def test_returns_false_when_position_risk_equals_limit(self) -> None:
         position = make_position_opened(
@@ -118,8 +117,8 @@ class TradingPlanTests(unittest.TestCase):
             max_risk_percentage = Decimal("1"),
         )
 
-        result = plan.is_risk_exceeded_by(position)
-        self.assertFalse(result)
+        result = plan.evaluate_risk(position)
+        self.assertEqual(result, RiskEvaluation.WITHIN_LIMIT)
 
     def test_returns_false_when_position_risk_is_below_limit(self) -> None:
         position = make_position_opened(
@@ -131,8 +130,8 @@ class TradingPlanTests(unittest.TestCase):
             max_risk_percentage = Decimal("1"),
         )
 
-        result = plan.is_risk_exceeded_by(position)
-        self.assertFalse(result)
+        result = plan.evaluate_risk(position)
+        self.assertEqual(result, RiskEvaluation.WITHIN_LIMIT)
 
     def test_account_not_recognized(self) -> None:
         position = make_position_opened()
@@ -147,5 +146,5 @@ class TradingPlanTests(unittest.TestCase):
             "position and trading plan must belong to the same account",
         ):
 
-            plan.is_risk_exceeded_by(position)
+            plan.evaluate_risk(position)
             

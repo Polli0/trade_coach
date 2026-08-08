@@ -8,6 +8,11 @@ class TradeSide(StrEnum):
     BUY = "buy"
     SELL = "sell"
 
+class RiskEvaluation(StrEnum):
+    EXCEEDED = "exceeded"
+    WITHIN_LIMIT = "within_limit"
+    UNKNOWN = "unknown"
+
 
 @dataclass(frozen=True, slots=True)
 class PositionOpened:
@@ -48,10 +53,13 @@ class TradingPlan:
         if self.max_risk_percentage <= Decimal("0"):
             raise ValueError("max risk percentage must be greater than zero")
 
-    def is_risk_exceeded_by(self, position: PositionOpened) -> bool | None:
+    def evaluate_risk(self, position: PositionOpened) -> RiskEvaluation:
         if self.account_id != position.account_id:
             raise ValueError("position and trading plan must belong to the same account")
         risk_percentage = position.risk_percentage
         if risk_percentage is None:
-            return None
-        return risk_percentage > self.max_risk_percentage
+            return RiskEvaluation.UNKNOWN
+        else:
+            if risk_percentage > self.max_risk_percentage:
+                return RiskEvaluation.EXCEEDED
+            return RiskEvaluation.WITHIN_LIMIT
