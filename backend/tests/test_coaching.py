@@ -30,7 +30,7 @@ def make_position_opened(
 class RiskMessageTests(unittest.TestCase):
     def test_creates_message_when_risk_limit_is_exceeded(self) -> None:
         position = make_position_opened(
-            equity = 10000,
+            equity = Decimal("10000"),
             risk_amount = Decimal("200"),
         )
 
@@ -45,5 +45,35 @@ class RiskMessageTests(unittest.TestCase):
         self.assertEqual(message.kind, CoachMessageKind.RISK_LIMIT_EXCEEDED)
         self.assertEqual(message.account_id, position.account_id)
         self.assertEqual(message.position_id, position.position_id)
-        self.assertEqual(message.occured_at, position.occured_at)
-        
+        self.assertEqual(message.occurred_at, position.occurred_at)
+
+    def test_when_limit_is_within_limit(self) -> None:
+        position = make_position_opened(
+            risk_amount= Decimal("100"),
+        )
+
+        plan = TradingPlan(
+            account_id = "account-1",
+            max_risk_percentage = Decimal("1"),
+        )
+
+        message = create_risk_message(position, plan)
+
+        self.assertIsNone(message)
+
+    def test_when_limit_is_unknown(self) -> None:
+        position = make_position_opened(
+            risk_amount= None,
+            stop_loss= None,
+        )
+
+        plan = TradingPlan(
+            account_id = "account-1",
+            max_risk_percentage = Decimal("1"),
+        )
+
+        message = create_risk_message(position, plan)
+
+        self.assertIsNotNone(message)
+        self.assertIsInstance(message.body, str)
+        self.assertEqual(message.kind, CoachMessageKind.RISK_UNKNOWN)
