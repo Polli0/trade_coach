@@ -2,7 +2,7 @@ import unittest
 from datetime import UTC, datetime
 from decimal import Decimal
 
-from trade_coach.domain import PositionOpened, TradeSide, TradingPlan, RiskEvaluation
+from trade_coach.domain import PositionOpened, TradeSide, TradingPlan, RiskEvaluation, PositionClosed
 
 def make_position_opened(
     *,
@@ -26,6 +26,24 @@ def make_position_opened(
         risk_amount=risk_amount,
     )
 
+def make_position_closed(
+    *,
+    profit: Decimal = Decimal("100"),
+    commission: Decimal = Decimal("-3"),
+    swap: Decimal = Decimal("-2"),
+) -> PositionClosed:
+    return PositionClosed(
+        event_id="event-1",
+        account_id="account-1",
+        position_id="position-1",
+        occurred_at=datetime(2026, 8, 2, 8, 0, tzinfo=UTC),
+        symbol="EURUSD",
+        side=TradeSide.BUY,
+        profit=profit,
+        commission=commission,
+        close_price=Decimal("1.17980"),
+        swap=swap,
+    )
 
 class PositionOpenedTests(unittest.TestCase):
     def test_calculates_risk_percentage(self) -> None:
@@ -147,4 +165,14 @@ class TradingPlanTests(unittest.TestCase):
         ):
 
             plan.evaluate_risk(position)
-            
+
+
+class PositionClosedTests(unittest.TestCase):
+    def test_calculate_net_profits(self) -> None:
+        position_closed = make_position_closed (
+            profit=Decimal("100"),
+            commission=Decimal("-2"),
+            swap=Decimal("-1"),
+        )
+
+        self.assertEqual(position_closed.net_profit, Decimal("97"))

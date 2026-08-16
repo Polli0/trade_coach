@@ -77,4 +77,20 @@ class CoachMessage:
     title: str
     body: str
 
+@dataclass(frozen=True, slots=True)
+class PositionClosed:
+    event_id: str
+    account_id: str
+    position_id: str
+    occurred_at: datetime
+    symbol: str
+    side: TradeSide
+    profit: Decimal
+    commission: Decimal
+    close_price: Decimal
+    swap: Decimal
+
+    @property
+    def net_profit(self) -> Decimal:
+        return self.profit + self.commission + self.swap
     
