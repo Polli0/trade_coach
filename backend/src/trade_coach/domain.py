@@ -22,6 +22,11 @@ class TradeOutcome(StrEnum):
     LOSS = "loss"
     BREAK_EVEN = "break_even"
 
+class CloseReason(StrEnum):
+    STOP_LOSS = "stop_loss"
+    TAKE_PROFIT = "take_profit"
+    MANUAL = "manual"
+    OTHER = "other"
 
 @dataclass(frozen=True, slots=True)
 class PositionOpened:
@@ -94,8 +99,19 @@ class PositionClosed:
     commission: Decimal
     close_price: Decimal
     swap: Decimal
+    close_reason: CloseReason
 
     @property
     def net_profit(self) -> Decimal:
         return self.profit + self.commission + self.swap
+
+    @property
+    def outcome(self) -> TradeOutcome:
+        if self.net_profit > 0:
+            return TradeOutcome.PROFIT
+
+        if self.net_profit < 0:
+            return TradeOutcome.LOSS
+
+        return TradeOutcome.BREAK_EVEN
     

@@ -2,7 +2,7 @@ import unittest
 from datetime import UTC, datetime
 from decimal import Decimal
 
-from trade_coach.domain import PositionOpened, TradeSide, TradingPlan, RiskEvaluation, PositionClosed
+from trade_coach.domain import PositionOpened, TradeSide, TradingPlan, RiskEvaluation, PositionClosed, TradeOutcome, CloseReason
 
 def make_position_opened(
     *,
@@ -31,6 +31,7 @@ def make_position_closed(
     profit: Decimal = Decimal("100"),
     commission: Decimal = Decimal("-3"),
     swap: Decimal = Decimal("-2"),
+    close_reason: CloseReason = CloseReason.OTHER,
 ) -> PositionClosed:
     return PositionClosed(
         event_id="event-1",
@@ -43,6 +44,7 @@ def make_position_closed(
         commission=commission,
         close_price=Decimal("1.17980"),
         swap=swap,
+        close_reason = close_reason,
     )
 
 class PositionOpenedTests(unittest.TestCase):
@@ -168,11 +170,38 @@ class TradingPlanTests(unittest.TestCase):
 
 
 class PositionClosedTests(unittest.TestCase):
-    def test_calculate_net_profits(self) -> None:
-        position_closed = make_position_closed (
+    def test_net_profit(self) -> None:
+        position_closed = make_position_closed(
             profit=Decimal("100"),
             commission=Decimal("-2"),
             swap=Decimal("-1"),
         )
 
         self.assertEqual(position_closed.net_profit, Decimal("97"))
+
+    def test_returns_profit_outcome_when_net_profit_is_positive(self) -> None:
+        position = make_position_closed(
+            profit=Decimal("100"),
+            commission=Decimal("-2"),
+            swap=Decimal("-1"),
+        )
+
+        self.assertEqual(position.outcome, TradeOutcome.PROFIT)
+
+    def test_returns_loss_outcome_when_net_profit_is_negative(self) -> None:
+        position = make_position_closed(
+            profit=Decimal("-50"),
+            commission=Decimal("-2"),
+            swap=Decimal("0"),
+        )
+
+        self.assertEqual(position.outcome, TradeOutcome.LOSS)
+
+    def test_returns_break_even_outcome_when_net_profit_is_zero(self) -> None:
+        position = make_position_closed(
+            profit=Decimal("3"),
+            commission=Decimal("-2"),
+            swap=Decimal("-1"),
+        )
+
+        self.assertEqual(position.outcome, TradeOutcome.BREAK_EVEN)
