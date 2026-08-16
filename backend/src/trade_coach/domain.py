@@ -17,6 +17,11 @@ class CoachMessageKind(StrEnum):
     RISK_LIMIT_EXCEEDED = "risk_limit_exceeded"
     RISK_UNKNOWN = "risk_unknown"
 
+class TradeOutcome(StrEnum):
+    PROFIT = "profit"
+    LOSS = "loss"
+    BREAK_EVEN = "break_even"
+
 
 @dataclass(frozen=True, slots=True)
 class PositionOpened:
