@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, date
 from decimal import Decimal
 from enum import StrEnum
 
@@ -114,4 +114,28 @@ class PositionClosed:
             return TradeOutcome.LOSS
 
         return TradeOutcome.BREAK_EVEN
-    
+
+@dataclass(frozen=True, slots=True)
+class DailySummary:
+    account_id: str
+    day: date
+    closed_positions: tuple[PositionClosed, ...]
+
+    @property
+    def stop_loss_count(self) -> int:
+        result = 0
+
+        for x in self.closed_positions:
+            if x.close_reason is CloseReason.STOP_LOSS:
+                result += 1
+
+        return result
+
+    @property
+    def net_profit(self) -> Decimal:
+        result = Decimal("0")
+
+        for x in self.closed_positions:
+            result += x.net_profit
+
+        return result

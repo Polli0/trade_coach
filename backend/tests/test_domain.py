@@ -1,8 +1,8 @@
 import unittest
-from datetime import UTC, datetime
+from datetime import UTC, datetime, date
 from decimal import Decimal
 
-from trade_coach.domain import PositionOpened, TradeSide, TradingPlan, RiskEvaluation, PositionClosed, TradeOutcome, CloseReason
+from trade_coach.domain import PositionOpened, TradeSide, TradingPlan, RiskEvaluation, PositionClosed, TradeOutcome, CloseReason, DailySummary
 
 def make_position_opened(
     *,
@@ -32,11 +32,12 @@ def make_position_closed(
     commission: Decimal = Decimal("-3"),
     swap: Decimal = Decimal("-2"),
     close_reason: CloseReason = CloseReason.OTHER,
+    position_id: str = "position-1",
 ) -> PositionClosed:
     return PositionClosed(
         event_id="event-1",
         account_id="account-1",
-        position_id="position-1",
+        position_id=position_id,
         occurred_at=datetime(2026, 8, 2, 8, 0, tzinfo=UTC),
         symbol="EURUSD",
         side=TradeSide.BUY,
@@ -205,3 +206,44 @@ class PositionClosedTests(unittest.TestCase):
         )
 
         self.assertEqual(position.outcome, TradeOutcome.BREAK_EVEN)
+
+class DailySummaryTests(unittest.TestCase):
+    def test_expect_two_daily_stop_loss(self) -> None:
+        position1 = make_position_closed(
+            close_reason=CloseReason.STOP_LOSS,
+        )
+        position2 = make_position_closed(
+            position_id="position-2",
+            close_reason=CloseReason.STOP_LOSS,
+        )
+        position3 = make_position_closed(
+            position_id="position-3",
+            close_reason=CloseReason.MANUAL,
+        )
+
+        daily_summary = DailySummary(
+            account_id = position1.account_id,
+            day = position1.occurred_at.date(),
+            closed_positions = (position1, position2, position3),
+        )
+
+        self.assertEqual(daily_summary.stop_loss_count, 2)
+
+    def test_expect_profit_day(self) -> None:
+        position1 = make_position_closed(
+            profit = Decimal("100"),
+        )
+        position2 = make_position_closed(
+            profit = Decimal("-52"),
+        )
+        position3 = make_position_closed(
+            profit = Decimal("0"),
+        )
+
+        daily_summary = DailySummary(
+            account_id = position1.account_id,
+            day = position1.occurred_at.date(),
+            closed_positions = (position1, position2, position3),
+        )
+
+        self.assertEqual(daily_summary.net_profit, Decimal("33"))
