@@ -62,10 +62,13 @@ class PositionOpened:
 class TradingPlan:
     account_id: str
     max_risk_percentage: Decimal #The risk it will decide from the user.
+    max_daily_stop_losses: int = 2
 
     def __post_init__(self) -> None:
         if self.max_risk_percentage <= Decimal("0"):
             raise ValueError("max risk percentage must be greater than zero")
+        if self.max_daily_stop_losses <= 0:
+            raise ValueError("max daily stop loss must be greater than zero")
 
     def evaluate_risk(self, position: PositionOpened) -> RiskEvaluation:
         if self.account_id != position.account_id:

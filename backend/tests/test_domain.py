@@ -33,12 +33,13 @@ def make_position_closed(
     swap: Decimal = Decimal("-2"),
     close_reason: CloseReason = CloseReason.OTHER,
     position_id: str = "position-1",
+    occurred_at: datetime = datetime(2026, 8, 2, 8, 0, tzinfo=UTC),
 ) -> PositionClosed:
     return PositionClosed(
         event_id="event-1",
         account_id="account-1",
         position_id=position_id,
-        occurred_at=datetime(2026, 8, 2, 8, 0, tzinfo=UTC),
+        occurred_at=occurred_at,
         symbol="EURUSD",
         side=TradeSide.BUY,
         profit=profit,
@@ -169,6 +170,40 @@ class TradingPlanTests(unittest.TestCase):
 
             plan.evaluate_risk(position)
 
+    def test_max_daily_stop_non_positive(self) -> None:
+        invalid_max_stop_losses = (
+            0,
+            -1,
+        )
+
+        for max_daily_stop_losses in invalid_max_stop_losses:
+            with self.subTest(max_stop_losses = max_daily_stop_losses):
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "max daily stop loss must be greater than zero",
+                ):
+                    TradingPlan(
+                        account_id = "account-1",
+                        max_risk_percentage = Decimal("3"),
+                        max_daily_stop_losses = max_daily_stop_losses,
+                    )
+
+    def test_max_daily_stop_losses_equal_two(self) -> None:
+        plan = TradingPlan(
+            account_id = "account-1",
+            max_risk_percentage = Decimal("2"),
+        )
+
+        self.assertEqual(plan.max_daily_stop_losses, 2)
+
+    def test_max_daily_stop_losses_personalized(self) -> None:
+        plan = TradingPlan(
+            account_id = "account-1",
+            max_daily_stop_losses = 3,
+            max_risk_percentage = Decimal("2"),
+        )
+
+        self.assertEqual(plan.max_daily_stop_losses, 3)
 
 class PositionClosedTests(unittest.TestCase):
     def test_net_profit(self) -> None:
