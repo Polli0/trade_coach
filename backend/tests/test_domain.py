@@ -31,13 +31,15 @@ def make_position_closed(
     profit: Decimal = Decimal("100"),
     commission: Decimal = Decimal("-3"),
     swap: Decimal = Decimal("-2"),
+    fee: Decimal = Decimal("0"),
     close_reason: CloseReason = CloseReason.OTHER,
+    account_id: str = "account-1",
     position_id: str = "position-1",
     occurred_at: datetime = datetime(2026, 8, 2, 8, 0, tzinfo=UTC),
 ) -> PositionClosed:
     return PositionClosed(
         event_id="event-1",
-        account_id="account-1",
+        account_id=account_id,
         position_id=position_id,
         occurred_at=occurred_at,
         symbol="EURUSD",
@@ -46,6 +48,7 @@ def make_position_closed(
         commission=commission,
         close_price=Decimal("1.17980"),
         swap=swap,
+        fee=fee,
         close_reason = close_reason,
     )
 
@@ -211,9 +214,10 @@ class PositionClosedTests(unittest.TestCase):
             profit=Decimal("100"),
             commission=Decimal("-2"),
             swap=Decimal("-1"),
+            fee=Decimal("-1"),
         )
 
-        self.assertEqual(position_closed.net_profit, Decimal("97"))
+        self.assertEqual(position_closed.net_profit, Decimal("96"))
 
     def test_returns_profit_outcome_when_net_profit_is_positive(self) -> None:
         position = make_position_closed(
@@ -282,3 +286,31 @@ class DailySummaryTests(unittest.TestCase):
         )
 
         self.assertEqual(daily_summary.net_profit, Decimal("33"))
+
+    def test_rejects_position_from_different_account(self) -> None:
+        position = make_position_closed(account_id="account-2")
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "closed position and daily summary must belong to the same account",
+        ):
+            DailySummary(
+                account_id="account-1",
+                day=position.occurred_at.date(),
+                closed_positions=(position,),
+            )
+
+    def test_rejects_position_from_different_day(self) -> None:
+        position = make_position_closed(
+            occurred_at=datetime(2026, 8, 3, 8, 0, tzinfo=UTC),
+        )
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "closed position and daily summary must belong to the same day",
+        ):
+            DailySummary(
+                account_id=position.account_id,
+                day=date(2026, 8, 2),
+                closed_positions=(position,),
+            )

@@ -16,6 +16,7 @@ class RiskEvaluation(StrEnum):
 class CoachMessageKind(StrEnum):
     RISK_LIMIT_EXCEEDED = "risk_limit_exceeded"
     RISK_UNKNOWN = "risk_unknown"
+    TRADE_AFTER_STOP_LOSSES = "trade_after_stop_losses"
 
 class TradeOutcome(StrEnum):
     PROFIT = "profit"
@@ -102,11 +103,12 @@ class PositionClosed:
     commission: Decimal
     close_price: Decimal
     swap: Decimal
+    fee: Decimal
     close_reason: CloseReason
 
     @property
     def net_profit(self) -> Decimal:
-        return self.profit + self.commission + self.swap
+        return self.profit + self.commission + self.swap + self.fee
 
     @property
     def outcome(self) -> TradeOutcome:
@@ -123,6 +125,18 @@ class DailySummary:
     account_id: str
     day: date
     closed_positions: tuple[PositionClosed, ...]
+
+    def __post_init__(self) -> None:
+        for position in self.closed_positions:
+            if position.account_id != self.account_id:
+                raise ValueError(
+                    "closed position and daily summary must belong to the same account"
+                )
+
+            if position.occurred_at.date() != self.day:
+                raise ValueError(
+                    "closed position and daily summary must belong to the same day"
+                )
 
     @property
     def stop_loss_count(self) -> int:
