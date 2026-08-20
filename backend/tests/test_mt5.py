@@ -85,3 +85,48 @@ class PositionClosedFromDealsTests(unittest.TestCase):
         self.assertEqual(position.swap, Decimal("-2"))
         self.assertEqual(position.fee, Decimal("-1.00"))
         self.assertEqual(position.net_profit, Decimal("-55.00"))
+
+    def test_rejects_deals_from_different_positions(self) -> None:
+        open_deal = make_mt5_deal(
+            symbol="EURUSD",
+            reason=CloseReason.OTHER,
+            price=Decimal("1.15000"),
+            swap=Decimal("0"),
+            fee=Decimal("-0.5"),
+            profit=Decimal("0"),
+        )
+
+        close_deal = make_mt5_deal(
+            deal_id="deal-close",
+            position_id="position-2",
+            symbol="EURUSD",
+            occurred_at=datetime(2026, 8, 2, 10, 30, tzinfo=UTC),
+            side=TradeSide.SELL,
+            reason=CloseReason.STOP_LOSS,
+            price=Decimal("1.14500"),
+            swap=Decimal("-2"),
+            fee=Decimal("-0.5"),
+            profit=Decimal("-50"),
+            entry=Mt5DealEntry.OUT,
+        )
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "All deals must belong to the same position!",
+        ):
+            position_closed_from_deals(
+            account_id="account-1",
+            deals=(open_deal, close_deal),
+        )
+
+    def test_rejects_empty_deals(self) -> None:
+        with self.assertRaisesRegex(
+            ValueError,
+            "deals must not be empty !",
+        ):
+            position_closed_from_deals(
+                account_id="account-1",
+                deals=(),
+            )
+    def test_rejects_deals_without_opening_deal(self) -> None:
+        return None

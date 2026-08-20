@@ -27,6 +27,15 @@ class Mt5Deal:
     entry: Mt5DealEntry
 
 def position_closed_from_deals(*, account_id: str, deals: tuple[Mt5Deal, ...]) -> PositionClosed:
+
+    position_ids = {x.position_id for x in deals}
+
+    if not deals:
+        raise ValueError("deals must not be empty !")
+
+    if len(position_ids) > 1:
+        raise ValueError("All deals must belong to the same position!")
+
     open_deals: list[Mt5Deal] = []
     close_deals: list[Mt5Deal] = []
 
